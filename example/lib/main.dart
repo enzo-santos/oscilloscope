@@ -5,7 +5,7 @@ import 'dart:math';
 ///
 /// In this demo 2 displays are generated showing the outputs for Sine & Cosine
 /// The scope displays will show the data sets  which will fill the yAxis and then the screen display will 'scroll'
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Viewport;
 import 'package:oscilloscope/oscilloscope.dart';
 
 void main() => runApp(new MyApp());
@@ -13,7 +13,7 @@ void main() => runApp(new MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return new MaterialApp(
+    return MaterialApp(
       title: "Oscilloscope Display Example",
       home: Shell(),
     );
@@ -26,29 +26,42 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  List<double> traceSine = List();
-  List<double> traceCosine = List();
+  final RealTimeTraceProvider sineController = RealTimeTraceProvider(
+    initialViewport: Viewport(Range(0, 5), Range(-1, 1)),
+    xResizer: XResizer.local(),
+    yResizer: YResizer.fixed(-1, 1),
+    xAxisProvider: AxisProvider.relative(0.05,
+        numTicks: 5, onLabel: (v) => v.toStringAsFixed(2)),
+    yAxisProvider: AxisProvider.relative(0.05,
+        numTicks: 3, onLabel: (v) => v.toInt().toString()),
+  );
+  final RealTimeTraceProvider cosineController = RealTimeTraceProvider(
+    initialViewport: Viewport(Range(0, 5), Range(-1, 1)),
+    xResizer: XResizer.local(),
+    yResizer: YResizer.fixed(-1, 1),
+    xAxisProvider: AxisProvider.relative(0.05,
+        numTicks: 5, onLabel: (v) => v.toStringAsFixed(2)),
+    yAxisProvider: AxisProvider.relative(0.05,
+        numTicks: 3, onLabel: (v) => v.toInt().toString()),
+  );
+
   double radians = 0.0;
   Timer _timer;
 
   /// method to generate a Test  Wave Pattern Sets
   /// this gives us a value between +1  & -1 for sine & cosine
-  _generateTrace(Timer t) {
+  void _generateTrace(Timer t) {
     // generate our  values
-    var sv = sin((radians * pi));
-    var cv = cos((radians * pi));
+    final double sv = sin((radians * pi));
+    final double cv = cos((radians * pi));
 
     // Add to the growing dataset
     setState(() {
-      traceSine.add(sv);
-      traceCosine.add(cv);
+      sineController.add(radians, sv);
+      cosineController.add(radians, cv);
     });
 
-    // adjust to recyle the radian value ( as 0 = 2Pi RADS)
     radians += 0.05;
-    if (radians >= 2.0) {
-      radians = 0.0;
-    }
   }
 
   @override
@@ -68,41 +81,32 @@ class _ShellState extends State<Shell> {
   Widget build(BuildContext context) {
     // Create A Scope Display for Sine
     Oscilloscope scopeOne = Oscilloscope(
+      sineController,
       showYAxis: true,
       yAxisColor: Colors.orange,
       margin: EdgeInsets.all(20.0),
       strokeWidth: 1.0,
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       traceColor: Colors.green,
-      yAxisMax: 1.0,
-      yAxisMin: -1.0,
-      dataSet: traceSine,
     );
 
     // Create A Scope Display for Cosine
     Oscilloscope scopeTwo = Oscilloscope(
+      cosineController,
       showYAxis: true,
       margin: EdgeInsets.all(20.0),
       strokeWidth: 3.0,
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       traceColor: Colors.yellow,
-      yAxisMax: 1.0,
-      yAxisMin: -1.0,
-      dataSet: traceCosine,
     );
 
     // Generate the Scaffold
     return Scaffold(
-      appBar: AppBar(
-        title: Text("OscilloScope Demo"),
-      ),
+      appBar: AppBar(title: Text("OscilloScope Demo")),
       body: Column(
         children: <Widget>[
           Expanded(flex: 1, child: scopeOne),
-          Expanded(
-            flex: 1,
-            child: scopeTwo,
-          ),
+          Expanded(flex: 1, child: scopeTwo),
         ],
       ),
     );
