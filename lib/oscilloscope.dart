@@ -33,8 +33,6 @@ export 'package:oscilloscope/src/trace_provider.dart';
 /// The [margin] argument allows space to be set around the display (this defaults to EdgeInsets.all(10.0) if not specified)
 ///
 /// The [strokeWidth] argument defines how wide to make lines drawn (this defaults to 2.0 if not specified).
-///
-/// NB: This is not a Time Domain trace, the update frequency of the supplied [dataSet] determines the trace speed.
 class Oscilloscope extends StatelessWidget {
   final TraceProvider traceProvider;
   final Color backgroundColor;
