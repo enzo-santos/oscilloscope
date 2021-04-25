@@ -11,3 +11,4 @@ ios/Runner/GeneratedPluginRegistrant.*
 
 .idea/
 example/ios/Flutter/flutter_export_environment.sh
+coverage/lcov.info

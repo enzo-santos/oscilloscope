@@ -82,8 +82,8 @@ class _ShellState extends State<Shell> {
     // Create A Scope Display for Sine
     Oscilloscope scopeOne = Oscilloscope(
       sineController,
-      showYAxis: true,
-      yAxisColor: Colors.orange,
+      showYOrigin: true,
+      yOriginColor: Colors.orange,
       margin: EdgeInsets.all(20.0),
       strokeWidth: 1.0,
       backgroundColor: Colors.white,
@@ -93,7 +93,7 @@ class _ShellState extends State<Shell> {
     // Create A Scope Display for Cosine
     Oscilloscope scopeTwo = Oscilloscope(
       cosineController,
-      showYAxis: true,
+      showYOrigin: true,
       margin: EdgeInsets.all(20.0),
       strokeWidth: 3.0,
       backgroundColor: Colors.white,

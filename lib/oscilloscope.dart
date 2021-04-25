@@ -19,8 +19,8 @@ export 'package:oscilloscope/src/trace_provider.dart';
 ///
 /// All other arguments are optional as they have preset values
 ///
-/// [showYAxis] this will display a line along the yAxisat 0 if the value is set to true (default is false)
-/// [yAxisColor] determines the color of the displayed yAxis (default value is Colors.white)
+/// [showYOrigin] this will display a line along the yAxisat 0 if the value is set to true (default is false)
+/// [yOriginColor] determines the color of the displayed yAxis (default value is Colors.white)
 ///
 /// [yAxisMin] and [yAxisMax] although optional should be set to reflect the data that is supplied in [dataSet]. These values
 /// should be set to the min and max values in the supplied [dataSet].
@@ -37,8 +37,10 @@ class Oscilloscope extends StatelessWidget {
   final TraceProvider traceProvider;
   final Color backgroundColor;
   final Color traceColor;
-  final Color yAxisColor;
+  final bool showXAxis;
   final bool showYAxis;
+  final Color yOriginColor;
+  final bool showYOrigin;
   final double strokeWidth;
   final EdgeInsetsGeometry margin;
 
@@ -46,10 +48,12 @@ class Oscilloscope extends StatelessWidget {
     this.traceProvider, {
     this.traceColor = Colors.white,
     this.backgroundColor = Colors.black,
-    this.yAxisColor = Colors.white,
+    this.yOriginColor = Colors.white,
     this.margin = const EdgeInsets.all(10.0),
-    this.showYAxis = false,
+    this.showYOrigin = false,
     this.strokeWidth = 2.0,
+    this.showXAxis = true,
+    this.showYAxis = true,
   });
 
   @override
@@ -63,15 +67,19 @@ class Oscilloscope extends StatelessWidget {
           child: CustomPaint(
             painter: TracePainter(
               traceProvider,
-              showYAxis: showYAxis,
-              yAxisColor: yAxisColor,
+              showYOrigin: showYOrigin,
+              yAxisColor: yOriginColor,
               traceColor: traceColor,
               strokeWidth: strokeWidth,
             ),
           ),
         ),
-        xAxis: CustomPaint(painter: XAxisPainter(traceProvider)),
-        yAxis: CustomPaint(painter: YAxisPainter(traceProvider)),
+        xAxis: showXAxis
+            ? CustomPaint(painter: XAxisPainter(traceProvider))
+            : null,
+        yAxis: showYAxis
+            ? CustomPaint(painter: YAxisPainter(traceProvider))
+            : null,
       ),
     );
   }
