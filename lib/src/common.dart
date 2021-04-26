@@ -1,10 +1,12 @@
 import 'package:oscilloscope/src/utils.dart';
 
+/// Represents a series of points.
 class Series {
   /// The data backed by this series.
   ///
   /// Since this class uses binary search on its horizontal values to improve
-  /// performance, each point should have its x-value lesser than the next.
+  /// performance, each point should have its x-value lesser or equal to the
+  /// next or it may occur undefined behaviour.
   final List<Point> _data;
 
   /// Creates a series using a list of points.
@@ -198,14 +200,21 @@ class Series {
   int get size => _data.length;
 }
 
+/// Represents a viewport.
 class Viewport {
+  /// The x-bounds of this viewport.
   final Range x;
+
+  /// The y-bounds of this viewport.
   final Range y;
 
+  /// Creates a viewport.
   const Viewport(this.x, this.y);
 
+  /// Copy this range using a new configuration, if given.
   Viewport copy({Range? x, Range? y}) => Viewport(x ?? this.x, y ?? this.y);
 
+  /// Returns if this viewport contains a point.
   bool contains(Point point) =>
       x.contains(point.x) == RangeLimit.inside &&
       y.contains(point.y) == RangeLimit.inside;
@@ -222,41 +231,70 @@ class Viewport {
   int get hashCode => x.hashCode ^ y.hashCode;
 }
 
+/// Defines how a value should be scaled.
 class Dimension {
+  /// The origin range.
   final Range from;
+
+  /// The target range.
   final Range to;
 
+  /// Creates a dimension.
   const Dimension(this.from, this.to);
 
+  /// Scales a value from a origin range to a target range.
+  ///
+  /// The same proportion will be used for mapping the origin to the target,
+  /// i.e. if [value] is equal to the maximum of the origin range, the returned
+  /// value will be the maximum of the target range.
   double scale(double value) {
     if (from.length == 0) return to.min;
     return (((value - from.min) * to.length) / from.length) + to.min;
   }
 }
 
+/// Defines the position of a value relative to a range.
 enum RangeLimit { under, inside, over }
 
+/// Represents the bounds of a range of values.
 class Range {
+  /// The minimum value of this range.
   final double min;
+
+  /// The maximum value of this range.
   final double max;
 
-  const Range(this.min, this.max);
+  /// Creates a range.
+  ///
+  /// [max] must be greater or equal to [min] to avoid undefined behaviour.
+  const Range(this.min, this.max) : assert(min <= max);
 
+  /// Creates a range based on some [size].
+  ///
+  /// The minimum value of this range will be 0 and the maximum will be [size].
   const Range.fromSize(double size) : this(0, size);
 
+  /// The length of this range.
   double get length => max - min;
 
-  Dimension combine(Range other) => Dimension(this, other);
+  /// Combines this range with another [range] for scaling purposes.
+  Dimension combine(Range range) => Dimension(this, range);
 
+  /// Checks the position of a [value] relative to this range.
   RangeLimit contains(double value) {
     if (value < min) return RangeLimit.under;
     if (value > max) return RangeLimit.over;
     return RangeLimit.inside;
   }
 
+  /// Copy this range using a new configuration, if given.
   Range copy({double? min, double? max}) =>
       Range(min ?? this.min, max ?? this.max);
 
+  /// Shifts this range [value] units.
+  ///
+  /// If [value] is positive, this range will be shifted to the right. If it's
+  /// negative, it will be shifted to the left.
   Range shifted(double value) => Range(min + value, max + value);
 
   @override
@@ -269,17 +307,17 @@ class Range {
 
   @override
   int get hashCode => min.hashCode ^ max.hashCode;
-
-  @override
-  String toString() {
-    return 'Range{min: $min, max: $max}';
-  }
 }
 
+/// Represents a point.
 class Point {
+  /// The x-value of this point.
   final double x;
+
+  /// The y-value of this point.
   final double y;
 
+  /// Creates a point.
   const Point(this.x, this.y);
 
   @override

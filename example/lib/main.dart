@@ -77,27 +77,33 @@ class _ShellState extends State<Shell> {
     super.dispose();
   }
 
+  static final Random _random = Random();
+  static final List<Point> _trace =
+      List.generate(30, (i) => i + _random.nextInt(2))
+          .map((x) => Point(x.toDouble(), _random.nextDouble()))
+          .toList(growable: false);
+
   @override
   Widget build(BuildContext context) {
     // Create A Scope Display for Sine
     Oscilloscope scopeOne = Oscilloscope(
       sineController,
-      showYOrigin: true,
-      yOriginColor: Colors.orange,
       margin: EdgeInsets.all(20.0),
-      strokeWidth: 1.0,
       backgroundColor: Colors.white,
-      traceColor: Colors.green,
+      yOriginStyle: TraceStyle(thickness: 0.5, color: Colors.orange),
+      traceStyle: TraceStyle(thickness: 1.0, color: Colors.green),
     );
 
     // Create A Scope Display for Cosine
     Oscilloscope scopeTwo = Oscilloscope(
       cosineController,
-      showYOrigin: true,
       margin: EdgeInsets.all(20.0),
-      strokeWidth: 3.0,
       backgroundColor: Colors.white,
-      traceColor: Colors.yellow,
+      yOriginStyle: null,
+      traceStyle: TraceStyle(thickness: 3.0, color: Colors.yellow),
+      backgroundTraces: [
+        PlotSeries(_trace, TraceStyle(thickness: 2.0, color: Colors.red)),
+      ],
     );
 
     // Generate the Scaffold

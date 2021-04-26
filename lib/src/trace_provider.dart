@@ -3,12 +3,17 @@ import 'package:oscilloscope/src/resizer.dart';
 
 import 'common.dart';
 
+/// Provides a list of points to be plotted by an oscilloscope.
 abstract class TraceProvider {
   final XResizer xResizer;
   final YResizer yResizer;
   final AxisProvider xAxisProvider;
   final AxisProvider yAxisProvider;
 
+  /// Creates a trace provider.
+  ///
+  /// [xResizer] and [yResizer] represents the resizers of both axes.
+  /// [xAxisProvider] and [yAxisProvider] provides the ticks of both axes.
   TraceProvider(
       {required this.xResizer,
       required this.yResizer,
@@ -17,14 +22,19 @@ abstract class TraceProvider {
       : xAxisProvider = xAxisProvider ?? AxisProvider.relative(0.05),
         yAxisProvider = yAxisProvider ?? AxisProvider.relative(0.05);
 
+  /// The data of this provider.
   List<Point> get values;
 
+  /// The viewport based on the current data of this provider.
   Viewport get viewport;
 }
 
+/// Provides a on-demand list of points to be plotted by an oscilloscope.
 class RealTimeTraceProvider extends TraceProvider {
+  /// Callback property called whenever the horizontal axis is resized.
   final void Function()? onXUpdate;
 
+  /// Creates a real-time trace provider.
   RealTimeTraceProvider(
       {Viewport? initialViewport,
       required YResizer yResizer,
