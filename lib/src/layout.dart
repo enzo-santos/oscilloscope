@@ -67,33 +67,33 @@ class _OscilloscopeLayoutDelegate extends MultiChildLayoutDelegate {
 
   @override
   void performLayout(Size size) {
-    final double xAxisHeight = xProvider?.fromSize(size) ?? 0;
-    final double yAxisWidth = yProvider?.fromSize(size) ?? 0;
-    final bool hasXAxis = hasChild(_OscilloscopeLayoutType.xAxis);
-    final bool hasYAxis = hasChild(_OscilloscopeLayoutType.yAxis);
+    final bool hasX = hasChild(_OscilloscopeLayoutType.xAxis);
+    final bool hasY = hasChild(_OscilloscopeLayoutType.yAxis);
+    final double xHeight = (hasX ? xProvider?.fromSize(size) : null) ?? 0;
+    final double yWidth = (hasY ? yProvider?.fromSize(size) : null) ?? 0;
 
-    final Size xAxisSize = hasXAxis
+    final Size xAxisSize = hasX
         ? layoutChild(
             _OscilloscopeLayoutType.xAxis,
             BoxConstraints.tightFor(
-                width: size.width - yAxisWidth, height: xAxisHeight))
+                width: size.width - yWidth, height: xHeight))
         : Size.zero;
 
-    final Size yAxisSize = hasYAxis
+    final Size yAxisSize = hasY
         ? layoutChild(
             _OscilloscopeLayoutType.yAxis,
             BoxConstraints.tightFor(
-                width: yAxisWidth, height: size.height - xAxisHeight))
+                width: yWidth, height: size.height - xHeight))
         : Size.zero;
 
     layoutChild(
       _OscilloscopeLayoutType.plot,
       BoxConstraints.tightFor(
-          width: size.width - yAxisWidth, height: size.height - xAxisHeight),
+          width: size.width - yWidth, height: size.height - xHeight),
     );
 
-    if (hasYAxis) positionChild(_OscilloscopeLayoutType.yAxis, Offset.zero);
-    if (hasXAxis)
+    if (hasY) positionChild(_OscilloscopeLayoutType.yAxis, Offset.zero);
+    if (hasX)
       positionChild(_OscilloscopeLayoutType.xAxis,
           Offset(yAxisSize.width, size.height - xAxisSize.height));
 

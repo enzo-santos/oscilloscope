@@ -1,4 +1,3 @@
-import 'package:oscilloscope/src/axis_provider.dart';
 import 'package:oscilloscope/src/resizer.dart';
 
 import 'common.dart';
@@ -7,20 +6,12 @@ import 'common.dart';
 abstract class TraceProvider {
   final XResizer xResizer;
   final YResizer yResizer;
-  final AxisProvider xAxisProvider;
-  final AxisProvider yAxisProvider;
 
   /// Creates a trace provider.
   ///
   /// [xResizer] and [yResizer] represents the resizers of both axes.
   /// [xAxisProvider] and [yAxisProvider] provides the ticks of both axes.
-  TraceProvider(
-      {required this.xResizer,
-      required this.yResizer,
-      AxisProvider? xAxisProvider,
-      AxisProvider? yAxisProvider})
-      : xAxisProvider = xAxisProvider ?? AxisProvider.relative(0.05),
-        yAxisProvider = yAxisProvider ?? AxisProvider.relative(0.05);
+  const TraceProvider({required this.xResizer, required this.yResizer});
 
   /// The data of this provider.
   List<Point> get values;
@@ -39,15 +30,9 @@ class RealTimeTraceProvider extends TraceProvider {
       {Viewport? initialViewport,
       required YResizer yResizer,
       required XResizer xResizer,
-      AxisProvider? xAxisProvider,
-      AxisProvider? yAxisProvider,
       this.onXUpdate})
       : _viewport = initialViewport ?? Viewport(Range(0, 1), Range(0, 1)),
-        super(
-            xResizer: xResizer,
-            yResizer: yResizer,
-            xAxisProvider: xAxisProvider,
-            yAxisProvider: yAxisProvider);
+        super(xResizer: xResizer, yResizer: yResizer);
 
   @override
   Viewport get viewport => _viewport;

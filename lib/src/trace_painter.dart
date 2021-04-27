@@ -7,7 +7,7 @@ import 'package:oscilloscope/src/trace_provider.dart';
 class TracePainter extends CustomPainter {
   final TraceProvider provider;
 
-  final TraceStyle traceStyle;
+  final Plotter tracePlotter;
   final TraceStyle? yOriginStyle;
   final List<PlotSeries> backgroundTraces;
 
@@ -18,36 +18,20 @@ class TracePainter extends CustomPainter {
   /// style.
   const TracePainter(this.provider,
       {this.yOriginStyle,
-      this.traceStyle = const TraceStyle(thickness: 1.0, color: Colors.black),
+      required this.tracePlotter,
       this.backgroundTraces = const []});
 
-  Path? _drawPath(Size size, List<Point> data) {
-    if (data.isEmpty) return null;
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Only start plotting if the provider has data
+    if (provider.values.isEmpty) return;
 
     final Viewport viewport = provider.viewport;
     final Dimension xDim = viewport.x.combine(Range.fromSize(size.width));
     final Dimension yDim = viewport.y.combine(Range.fromSize(size.height));
 
-    final Path trace = Path();
-
-    final Point point = data.first;
-    trace.moveTo(xDim.scale(point.x), yDim.scale(point.y));
-
-    for (Point point in data)
-      trace.lineTo(xDim.scale(point.x), yDim.scale(point.y));
-
-    return trace;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Only start plotting if the provider has data
-    if (provider.values.length == 0) return;
-    final Viewport viewport = provider.viewport;
-
     // Draw the main path
-    final Path? path = _drawPath(size, provider.values);
-    if (path != null) canvas.drawPath(path, traceStyle.paint);
+    tracePlotter.plot(canvas, provider.values, xDim, yDim);
 
     // Draw the y-origin trace, if required
     final TraceStyle? yOriginStyle = this.yOriginStyle;
@@ -61,9 +45,9 @@ class TracePainter extends CustomPainter {
 
     // Draw any background traces
     backgroundTraces.forEach((trace) {
+      final Plotter plotter = trace.plotter;
       final List<Point> data = Series(trace.data).enclose(viewport.x);
-      final Path? path = _drawPath(size, data);
-      if (path != null) canvas.drawPath(path, trace.style.paint);
+      plotter.plot(canvas, data, xDim, yDim);
     });
   }
 

@@ -4,6 +4,7 @@ library oscilloscope;
 
 import 'package:flutter/material.dart' hide Viewport;
 import 'package:oscilloscope/src/axis_painter.dart';
+import 'package:oscilloscope/src/axis_provider.dart';
 import 'package:oscilloscope/src/layout.dart';
 import 'package:oscilloscope/src/painting.dart';
 import 'package:oscilloscope/src/trace_painter.dart';
@@ -21,9 +22,11 @@ class Oscilloscope extends StatelessWidget {
   final Color backgroundColor;
   final bool showXAxis;
   final bool showYAxis;
-  final TraceStyle traceStyle;
+  final Plotter tracePlotter;
   final TraceStyle? yOriginStyle;
   final EdgeInsetsGeometry margin;
+  final AxisProvider xAxisProvider;
+  final AxisProvider yAxisProvider;
   final List<PlotSeries> backgroundTraces;
 
   /// Creates an oscilloscope.
@@ -31,8 +34,10 @@ class Oscilloscope extends StatelessWidget {
     this.traceProvider, {
     this.backgroundColor = Colors.black,
     this.margin = const EdgeInsets.all(10.0),
-    this.traceStyle = const TraceStyle(thickness: 2.0, color: Colors.black),
+    this.tracePlotter = const LinePlotter(style: TraceStyle(thickness: 2.0, color: Colors.black)),
     this.yOriginStyle = const TraceStyle(thickness: 0.5, color: Colors.grey),
+    this.xAxisProvider = const RelativeAxisProvider(0.05),
+    this.yAxisProvider = const RelativeAxisProvider(0.05),
     this.showXAxis = true,
     this.showYAxis = true,
     this.backgroundTraces = const [],
@@ -44,23 +49,23 @@ class Oscilloscope extends StatelessWidget {
       padding: margin,
       color: backgroundColor,
       child: OscilloscopeLayout(
-        xAxisProvider: traceProvider.xAxisProvider,
-        yAxisProvider: traceProvider.yAxisProvider,
+        xAxisProvider: xAxisProvider,
+        yAxisProvider: yAxisProvider,
         plot: ClipRect(
           child: CustomPaint(
             painter: TracePainter(
               traceProvider,
-              traceStyle: traceStyle,
+              tracePlotter: tracePlotter,
               yOriginStyle: yOriginStyle,
               backgroundTraces: backgroundTraces,
             ),
           ),
         ),
         xAxis: showXAxis
-            ? CustomPaint(painter: XAxisPainter(traceProvider))
+            ? CustomPaint(painter: XAxisPainter(traceProvider, xAxisProvider))
             : null,
         yAxis: showYAxis
-            ? CustomPaint(painter: YAxisPainter(traceProvider))
+            ? CustomPaint(painter: YAxisPainter(traceProvider, yAxisProvider))
             : null,
       ),
     );

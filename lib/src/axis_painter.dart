@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Viewport;
 import 'package:oscilloscope/oscilloscope.dart';
 import 'package:oscilloscope/src/axis_provider.dart';
 import 'package:oscilloscope/src/trace_provider.dart';
-import 'package:oscilloscope/src/utils.dart';
 
 /// A painter used to draw the axis of an oscilloscope.
 abstract class AxisPainter extends CustomPainter {
@@ -43,23 +42,22 @@ abstract class AxisPainter extends CustomPainter {
   /// corresponding to this tick.
   Offset onPaintTick(Canvas canvas, Size tickSize, Size textSize, double value);
 
+  List<double> get _ticks {
+    final Range range = this.range;
+    final double x0 = range.min;
+
+    final int numTicks = axisProvider.numTicks;
+    final double step = (range.length + 1) / numTicks;
+    final double x = (x0 % step == 0) ? x0 : ((x0 ~/ step) + 1) * step;
+    return List.generate(numTicks, (i) => x + i * step);
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final Size tickSize = onCalculateTickSize(size);
     onPaintBaseline(canvas, tickSize);
 
-    final Range range = this.range;
-
-    final List<double> ticks;
-    final List<double>? currentTicks = axisProvider.currentTicks;
-    if (currentTicks == null) {
-      ticks = linSpace(range.min, range.max,
-              num: axisProvider.numTicks, endpoint: resizer.shouldLockAxis)
-          .toList();
-      axisProvider.currentTicks = ticks;
-    } else {
-      ticks = currentTicks;
-    }
+    final List<double> ticks = _ticks;
 
     for (double tick in ticks) {
       final String label = axisProvider.onLabel(tick);
@@ -72,15 +70,6 @@ abstract class AxisPainter extends CustomPainter {
           Size(labelPainter.minIntrinsicWidth, labelPainter.height), tick);
       labelPainter.paint(canvas, offset);
     }
-
-    if (ticks.first < range.min) {
-      ticks.removeAt(0);
-      ticks.add(range.max);
-    }
-    if (ticks.last > range.max) {
-      ticks.removeLast();
-      ticks.insert(0, range.min);
-    }
   }
 
   @override
@@ -90,8 +79,8 @@ abstract class AxisPainter extends CustomPainter {
 /// A painter used to draw the horizontal axis of an oscilloscope.
 class XAxisPainter extends AxisPainter {
   /// Creates a horizontal axis painter.
-  XAxisPainter(TraceProvider traceProvider)
-      : super(traceProvider, traceProvider.xAxisProvider);
+  XAxisPainter(TraceProvider traceProvider, AxisProvider xAxisProvider)
+      : super(traceProvider, xAxisProvider);
 
   @override
   Resizer get resizer => traceProvider.xResizer;
@@ -109,17 +98,18 @@ class XAxisPainter extends AxisPainter {
 
   @override
   Offset onPaintTick(Canvas canvas, Size tickSize, Size textSize, double tick) {
+    final Range range = this.range;
     final double x = ((tick - range.min) / range.length) * tickSize.width;
     _drawYLine(canvas, x, from: 0, to: tickSize.height);
-    return Offset(x - textSize.width / 2, textSize.height);
+    return Offset(x - textSize.width / 2, tickSize.height);
   }
 }
 
 /// A painter used to draw the vertical axis of an oscilloscope.
 class YAxisPainter extends AxisPainter {
   /// Creates a vertical axis painter.
-  YAxisPainter(TraceProvider traceProvider)
-      : super(traceProvider, traceProvider.yAxisProvider);
+  YAxisPainter(TraceProvider traceProvider, AxisProvider yAxisProvider)
+      : super(traceProvider, yAxisProvider);
 
   @override
   Resizer get resizer => traceProvider.yResizer;

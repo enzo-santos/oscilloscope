@@ -185,11 +185,11 @@ class Series {
     // If the first/last point inside range does not match with the start/end of
     // range, make an interpolation to find out the remaining points
     Point? point;
-    if (range.min != points.first.x) {
+    if (points.isEmpty || range.min != points.first.x) {
       point = estimate(range.min);
       if (point != null) points.insert(0, point);
     }
-    if (points.last.x != range.max) {
+    if (points.isEmpty || points.last.x != range.max) {
       point = estimate(range.max);
       if (point != null) points.add(point);
     }
@@ -251,6 +251,13 @@ class Dimension {
     if (from.length == 0) return to.min;
     return (((value - from.min) * to.length) / from.length) + to.min;
   }
+
+  /// Scales a value from a origin range to a reversed target range.
+  ///
+  /// If a point is being plotted in the vertical axis (where the plotting
+  /// orientation is bottom-top instead of top-bottom), this scaling is
+  /// preferred.
+  double reverseScale(double value) => scale(-value);
 }
 
 /// Defines the position of a value relative to a range.
@@ -265,9 +272,7 @@ class Range {
   final double max;
 
   /// Creates a range.
-  ///
-  /// [max] must be greater or equal to [min] to avoid undefined behaviour.
-  const Range(this.min, this.max) : assert(min <= max);
+  const Range(this.min, this.max);
 
   /// Creates a range based on some [size].
   ///
@@ -275,7 +280,10 @@ class Range {
   const Range.fromSize(double size) : this(0, size);
 
   /// The length of this range.
-  double get length => max - min;
+  double get length => (max - min).abs();
+
+  /// This range with [max] and [min] reversed.
+  Range reversed() => Range(max, min);
 
   /// Combines this range with another [range] for scaling purposes.
   Dimension combine(Range range) => Dimension(this, range);
@@ -330,4 +338,9 @@ class Point {
 
   @override
   int get hashCode => x.hashCode ^ y.hashCode;
+
+  @override
+  String toString() {
+    return 'Point{x: $x, y: $y}';
+  }
 }
