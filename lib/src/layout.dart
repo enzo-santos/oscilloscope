@@ -10,6 +10,12 @@ import 'package:oscilloscope/src/axis_provider.dart';
 /// required, each axis is optional and contains information about the current
 /// viewport, such as the x-maximum and the y-minimum.
 ///
+/// The y-axis is positioned in the top-left of the screen, with a bottom
+/// padding of x-axis height (or zero if the x-axis is disabled). The x-axis is
+/// positioned in the bottom-right of the screen, with a left padding of y-axis
+/// width (or zero if the y-axis is not defined). The plot is positioned in the
+/// top-right of the screen, in the right of y-axis and in the top of x-axis.
+///
 /// The number of ticks and the label for each axis can be defined using a
 /// [AxisProvider].
 class OscilloscopeLayout extends StatelessWidget {
@@ -34,72 +40,47 @@ class OscilloscopeLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Widget? xAxis = this.xAxis;
-    final Widget? yAxis = this.yAxis;
-    return CustomMultiChildLayout(
-      delegate: _OscilloscopeLayoutDelegate(xAxisProvider, yAxisProvider),
-      children: [
-        if (xAxis != null)
-          LayoutId(id: _OscilloscopeLayoutType.xAxis, child: xAxis),
-        if (yAxis != null)
-          LayoutId(id: _OscilloscopeLayoutType.yAxis, child: yAxis),
-        LayoutId(id: _OscilloscopeLayoutType.plot, child: plot),
-      ],
+    final Widget? xAxis = this.xAxis, yAxis = this.yAxis;
+    final bool hasX = xAxis != null, hasY = yAxis != null;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final Size size = Size(constraints.maxWidth, constraints.maxHeight);
+        final double xHeight =
+            (hasX ? xAxisProvider?.fromSize(size) : null) ?? 0;
+        final double yWidth =
+            (hasY ? yAxisProvider?.fromSize(size) : null) ?? 0;
+        return Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  if (hasY)
+                    SizedBox(
+                      width: yWidth,
+                      height: double.infinity,
+                      child: yAxis,
+                    ),
+                  Expanded(child: SizedBox.expand(child: plot)),
+                ],
+              ),
+            ),
+            Row(
+              children: [
+                if (hasX && hasY) Container(width: yWidth, height: xHeight),
+                if (hasX)
+                  Expanded(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: xHeight,
+                      child: xAxis,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
-}
-
-/// Defines the type of each part of an oscilloscope layout.
-enum _OscilloscopeLayoutType { xAxis, yAxis, plot }
-
-/// Positions each part of an oscilloscope layout in the screen.
-///
-/// The y-axis is positioned in the top-left of the screen, with a bottom
-/// padding of x-axis height (or zero if the x-axis is disabled). The x-axis is
-/// positioned in the bottom-right of the screen, with a left padding of y-axis
-/// width (or zero if the y-axis is not defined). The plot is positioned in the
-/// top-right of the screen, in the right of y-axis and in the top of x-axis.
-class _OscilloscopeLayoutDelegate extends MultiChildLayoutDelegate {
-  final AxisProvider? xProvider;
-  final AxisProvider? yProvider;
-
-  _OscilloscopeLayoutDelegate(this.xProvider, this.yProvider);
-
-  @override
-  void performLayout(Size size) {
-    final bool hasX = hasChild(_OscilloscopeLayoutType.xAxis);
-    final bool hasY = hasChild(_OscilloscopeLayoutType.yAxis);
-    final double xHeight = (hasX ? xProvider?.fromSize(size) : null) ?? 0;
-    final double yWidth = (hasY ? yProvider?.fromSize(size) : null) ?? 0;
-
-    final Size xAxisSize = hasX
-        ? layoutChild(
-            _OscilloscopeLayoutType.xAxis,
-            BoxConstraints.tightFor(
-                width: size.width - yWidth, height: xHeight))
-        : Size.zero;
-
-    final Size yAxisSize = hasY
-        ? layoutChild(
-            _OscilloscopeLayoutType.yAxis,
-            BoxConstraints.tightFor(
-                width: yWidth, height: size.height - xHeight))
-        : Size.zero;
-
-    layoutChild(
-      _OscilloscopeLayoutType.plot,
-      BoxConstraints.tightFor(
-          width: size.width - yWidth, height: size.height - xHeight),
-    );
-
-    if (hasY) positionChild(_OscilloscopeLayoutType.yAxis, Offset.zero);
-    if (hasX)
-      positionChild(_OscilloscopeLayoutType.xAxis,
-          Offset(yAxisSize.width, size.height - xAxisSize.height));
-
-    positionChild(_OscilloscopeLayoutType.plot, Offset(yAxisSize.width, 0));
-  }
-
-  @override
-  bool shouldRelayout(MultiChildLayoutDelegate oldDelegate) => true;
 }

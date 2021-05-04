@@ -42,20 +42,22 @@ abstract class Plotter {
 
   const Plotter(this.style);
 
-  static List<Point> _scale(List<Point> data, Dimension xDim, Dimension yDim) =>
-      data.map((p) => Point(xDim.scale(p.x), yDim.reverseScale(p.y))).toList();
+  static List<Point> _scale(List<Point> data, Scaling xS, Scaling yS) =>
+      data.map((p) => Point(xS.scale(p.x), yS.scale(p.y))).toList();
 
-  void plot(Canvas canvas, List<Point> data, Dimension xDim, Dimension yDim);
+  void plot(
+      Canvas canvas, List<Point> data, Scaling xScaling, Scaling yScaling);
 }
 
 class LinePlotter extends Plotter {
   const LinePlotter({required TraceStyle style}) : super(style);
 
   @override
-  void plot(Canvas canvas, List<Point> data, Dimension xDim, Dimension yDim) {
+  void plot(
+      Canvas canvas, List<Point> data, Scaling xScaling, Scaling yScaling) {
     if (data.isEmpty) return;
 
-    final List<Point> points = Plotter._scale(data, xDim, yDim);
+    final List<Point> points = Plotter._scale(data, xScaling, yScaling);
 
     final Path trace = Path();
 
@@ -70,10 +72,11 @@ class ScatterPlotter extends Plotter {
   const ScatterPlotter({required TraceStyle style}) : super(style);
 
   @override
-  void plot(Canvas canvas, List<Point> data, Dimension xDim, Dimension yDim) {
+  void plot(
+      Canvas canvas, List<Point> data, Scaling xScaling, Scaling yScaling) {
     if (data.isEmpty) return;
 
-    final List<Point> points = Plotter._scale(data, xDim, yDim);
+    final List<Point> points = Plotter._scale(data, xScaling, yScaling);
 
     canvas.drawPoints(
       PointMode.points,
@@ -92,37 +95,36 @@ class FillBetweenPlotter extends Plotter {
       : super(style);
 
   @override
-  void plot(Canvas canvas, List<Point> data, Dimension xDim, Dimension yDim) {
+  void plot(
+      Canvas canvas, List<Point> data, Scaling xScaling, Scaling yScaling) {
     if (data.isEmpty) return;
 
     final Path trace = Path();
     Point point = data.first;
-    trace.moveTo(xDim.scale(point.x), yDim.reverseScale(point.y));
+    trace.moveTo(xScaling.scale(point.x), yScaling.scale(point.y));
 
     for (int i = 0; i < data.length - 1; i++) {
-      final Point current = data[i];
+      final Point curr = data[i];
       final Point next = data[i + 1];
 
       canvas.drawPath(
         Path()
           ..addPolygon(
             [
-              Offset(
-                  xDim.scale(current.x), yDim.reverseScale(current.y + upper)),
-              Offset(
-                  xDim.scale(current.x), yDim.reverseScale(current.y - lower)),
-              Offset(xDim.scale(next.x), yDim.reverseScale(next.y - lower)),
-              Offset(xDim.scale(next.x), yDim.reverseScale(next.y + upper)),
+              Offset(xScaling.scale(curr.x), yScaling.scale(curr.y + upper)),
+              Offset(xScaling.scale(curr.x), yScaling.scale(curr.y - lower)),
+              Offset(xScaling.scale(next.x), yScaling.scale(next.y - lower)),
+              Offset(xScaling.scale(next.x), yScaling.scale(next.y + upper)),
             ],
             false,
           ),
         style.paint..style = PaintingStyle.fill,
       );
-      trace.lineTo(xDim.scale(current.x), yDim.reverseScale(current.y));
+      trace.lineTo(xScaling.scale(curr.x), yScaling.scale(curr.y));
     }
 
     point = data.last;
-    trace.lineTo(xDim.scale(point.x), yDim.reverseScale(point.y));
+    trace.lineTo(xScaling.scale(point.x), yScaling.scale(point.y));
     canvas.drawPath(trace, style.paint);
   }
 }
@@ -131,8 +133,9 @@ class MarkerPlotter extends ScatterPlotter {
   const MarkerPlotter({required TraceStyle style}) : super(style: style);
 
   @override
-  void plot(Canvas canvas, List<Point> data, Dimension xDim, Dimension yDim) {
+  void plot(
+      Canvas canvas, List<Point> data, Scaling xScaling, Scaling yScaling) {
     if (data.isEmpty) return;
-    super.plot(canvas, [data.last], xDim, yDim);
+    super.plot(canvas, [data.last], xScaling, yScaling);
   }
 }

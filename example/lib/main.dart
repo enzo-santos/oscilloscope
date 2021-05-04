@@ -27,19 +27,19 @@ class Shell extends StatefulWidget {
 
 class _ShellState extends State<Shell> {
   final RealTimeTraceProvider cosineController = RealTimeTraceProvider(
-    initialViewport: Viewport(Range(0, 5), Range(-1, 1)),
+    initialViewport: Viewport(Range(0, 5), Range(-5, 5)),
     xResizer: XResizer.local(),
-    yResizer: YResizer.fixed(-1, 1),
+    yResizer: YResizer.global(),
   );
 
   double radians = 0.0;
-  Timer? _timer;
+  late final Timer _timer;
 
   /// method to generate a Test  Wave Pattern Sets
   /// this gives us a value between +1  & -1 for sine & cosine
   void _generateTrace(Timer t) {
     // Add to the controller
-    setState(() => cosineController.add(radians, cos(radians * pi)));
+    setState(() => cosineController.add(radians, cos(radians * pi) * radians));
     radians += 0.05;
   }
 
@@ -52,7 +52,7 @@ class _ShellState extends State<Shell> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
     super.dispose();
   }
 
@@ -78,28 +78,38 @@ class _ShellState extends State<Shell> {
   String _plotName = "line";
   String _backgroundPlotName = "fill";
   double _margin = 20;
-  double _thickness = 3;
-  double _backgroundThickness = 2;
-  Color _backgroundColor = Colors.white;
-  Color _traceColor = Colors.yellow;
-  bool _showXAxis = true;
-  bool _showYAxis = true;
-  List<Point>? _backgroundTrace = _trace;
-  Color _backgroundTraceColor = Colors.red.withAlpha(0x44);
   int _numXTicks = 5;
   int _numYTicks = 3;
   int _numXLabel = 2;
   int _numYLabel = 0;
+  double _traceThickness = 3;
+  double _backgroundThickness = 2;
+  double _originThickness = 1;
+  Color _traceColor = Colors.yellow;
+  Color _backgroundColor = Colors.white;
+  Color _originColor = Colors.pink;
+
+  bool _showOrigin = true;
+  bool _showXAxis = true;
+  bool _showYAxis = true;
+  List<Point>? _backgroundTrace = _trace;
+  Color _backgroundTraceColor = Colors.red.withAlpha(0x44);
 
   // Build the oscilloscope using the defined settings
   Widget _buildOscilloscope() {
+    final List<Point>? backgroundTrace = _backgroundTrace;
     return Oscilloscope(
       cosineController,
       margin: EdgeInsets.all(_margin),
       backgroundColor: _backgroundColor,
       showXAxis: _showXAxis,
       showYAxis: _showYAxis,
-      yOriginStyle: null,
+      yOriginStyle: _showOrigin
+          ? TraceStyle(
+              thickness: _originThickness,
+              color: _originColor,
+            )
+          : null,
       xAxisProvider: RelativeAxisProvider(
         0.05,
         numTicks: _numXTicks,
@@ -112,12 +122,12 @@ class _ShellState extends State<Shell> {
       ),
       tracePlotter: _getPlotter(
         _plotName,
-        TraceStyle(thickness: _thickness, color: _traceColor),
+        TraceStyle(thickness: _traceThickness, color: _traceColor),
       ),
       backgroundTraces: [
-        if (_backgroundTrace != null)
+        if (backgroundTrace != null)
           PlotSeries(
-            _backgroundTrace!,
+            backgroundTrace,
             _getPlotter(
               _backgroundPlotName,
               TraceStyle(
@@ -187,14 +197,43 @@ class _ShellState extends State<Shell> {
                       ),
                       _NumberControlTile(
                         title: "Thickness",
-                        value: _thickness.toInt(),
+                        value: _traceThickness.toInt(),
                         onDecrease: () => setState(() {
-                          --_thickness;
-                          if (_thickness < 0) _thickness = 0;
+                          --_traceThickness;
+                          if (_traceThickness < 0) _traceThickness = 0;
                         }),
                         onIncrease: () => setState(() {
-                          ++_thickness;
-                          if (_thickness > 10) _thickness = 10;
+                          ++_traceThickness;
+                          if (_traceThickness > 10) _traceThickness = 10;
+                        }),
+                      ),
+                      Divider(),
+                      _BooleanControlTile(
+                        title: "Origin trace",
+                        value: _showOrigin,
+                        onChanged: (v) {
+                          setState(() => _showOrigin = v);
+                        },
+                      ),
+                      _ColorControlTile(
+                        title: "Trace color",
+                        colors: [
+                          Colors.pink,
+                          Colors.teal,
+                          Colors.lime,
+                        ],
+                        onSelected: (color) {
+                          setState(() => _originColor = color);
+                        },
+                      ),
+                      _NumberControlTile(
+                        title: "Thickness",
+                        value: _originThickness.toInt(),
+                        onDecrease: () => setState(() {
+                          _originThickness = max(0, _originThickness - 1);
+                        }),
+                        onIncrease: () => setState(() {
+                          _originThickness = min(10, _originThickness + 1);
                         }),
                       ),
                       Divider(),

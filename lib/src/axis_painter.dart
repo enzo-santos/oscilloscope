@@ -24,9 +24,6 @@ abstract class AxisPainter extends CustomPainter {
   /// The bounds of the axis being plotted.
   Range get range;
 
-  /// The resizer of the axis being plotted.
-  Resizer get resizer;
-
   /// Defines the space where the ticks will be plotted from the total available space.
   Size onCalculateTickSize(Size size);
 
@@ -40,16 +37,18 @@ abstract class AxisPainter extends CustomPainter {
   /// [value] is the numeric value this tick is representing. [tickSize] is the
   /// size returned by [onCalculateTickSize] and [textSize] is the size of label
   /// corresponding to this tick.
+  ///
+  /// Returns the offset the label of this tick should be drawn.
   Offset onPaintTick(Canvas canvas, Size tickSize, Size textSize, double value);
 
-  List<double> get _ticks {
+  Iterable<double> get _ticks sync* {
     final Range range = this.range;
     final double x0 = range.min;
 
     final int numTicks = axisProvider.numTicks;
     final double step = (range.length + 1) / numTicks;
-    final double x = (x0 % step == 0) ? x0 : ((x0 ~/ step) + 1) * step;
-    return List.generate(numTicks, (i) => x + i * step);
+    final double x = (x0 % step == 0) ? x0 : (x0 / step).ceil() * step;
+    for (int i = 0; i < numTicks; i++) yield x + i * step;
   }
 
   @override
@@ -57,18 +56,16 @@ abstract class AxisPainter extends CustomPainter {
     final Size tickSize = onCalculateTickSize(size);
     onPaintBaseline(canvas, tickSize);
 
-    final List<double> ticks = _ticks;
-
-    for (double tick in ticks) {
+    for (double tick in _ticks) {
       final String label = axisProvider.onLabel(tick);
       final TextPainter labelPainter = TextPainter(
-          text: TextSpan(text: label, style: TextStyle(color: Colors.black)),
+          text: TextSpan(
+              text: label, style: TextStyle(color: Colors.black, fontSize: 10)),
           textDirection: TextDirection.ltr)
         ..layout(maxWidth: size.width);
 
-      final Offset offset = onPaintTick(canvas, tickSize,
-          Size(labelPainter.minIntrinsicWidth, labelPainter.height), tick);
-      labelPainter.paint(canvas, offset);
+      labelPainter.paint(
+          canvas, onPaintTick(canvas, tickSize, labelPainter.size, tick));
     }
   }
 
@@ -81,9 +78,6 @@ class XAxisPainter extends AxisPainter {
   /// Creates a horizontal axis painter.
   XAxisPainter(TraceProvider traceProvider, AxisProvider xAxisProvider)
       : super(traceProvider, xAxisProvider);
-
-  @override
-  Resizer get resizer => traceProvider.xResizer;
 
   @override
   Range get range => traceProvider.viewport.x;
@@ -112,9 +106,6 @@ class YAxisPainter extends AxisPainter {
       : super(traceProvider, yAxisProvider);
 
   @override
-  Resizer get resizer => traceProvider.yResizer;
-
-  @override
   Range get range => traceProvider.viewport.y;
 
   @override
@@ -129,6 +120,6 @@ class YAxisPainter extends AxisPainter {
   Offset onPaintTick(Canvas canvas, Size tickSize, Size textSize, double tick) {
     final double y = (1 - (tick - range.min) / range.length) * tickSize.height;
     _drawXLine(canvas, y, from: 0, to: tickSize.width);
-    return Offset(-tickSize.width, y - textSize.height / 2);
+    return Offset(tickSize.width, y - textSize.height / 2);
   }
 }

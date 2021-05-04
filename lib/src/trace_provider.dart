@@ -1,17 +1,13 @@
+import 'dart:math';
+
 import 'package:oscilloscope/src/resizer.dart';
 
 import 'common.dart';
 
 /// Provides a list of points to be plotted by an oscilloscope.
 abstract class TraceProvider {
-  final XResizer xResizer;
-  final YResizer yResizer;
-
   /// Creates a trace provider.
-  ///
-  /// [xResizer] and [yResizer] represents the resizers of both axes.
-  /// [xAxisProvider] and [yAxisProvider] provides the ticks of both axes.
-  const TraceProvider({required this.xResizer, required this.yResizer});
+  const TraceProvider();
 
   /// The data of this provider.
   List<Point> get values;
@@ -20,19 +16,53 @@ abstract class TraceProvider {
   Viewport get viewport;
 }
 
+/// Adapts an already existing list of points to be plotted by an oscilloscope.
+class PredefinedTraceProvider extends TraceProvider {
+  @override
+  final List<Point> values;
+
+  @override
+  final Viewport viewport;
+
+  static Viewport _getViewport(List<double> x, List<double> y) {
+    double xMin = double.infinity,
+        xMax = double.negativeInfinity,
+        yMin = double.infinity,
+        yMax = double.negativeInfinity;
+
+    for (int i = 0; i < x.length; i++) {
+      final double xv = x[i], yv = y[i];
+      xMin = min(xMin, xv);
+      xMax = max(xMax, xv);
+      yMin = min(yMin, yv);
+      yMax = max(yMax, yv);
+    }
+    return Viewport(Range(xMin, xMax), Range(yMin, yMax));
+  }
+
+  PredefinedTraceProvider(List<double> x, List<double> y)
+      : assert(x.length == y.length),
+        values = List.generate(x.length, (i) => Point(x[i], y[i])),
+        viewport = _getViewport(x, y);
+}
+
 /// Provides a on-demand list of points to be plotted by an oscilloscope.
 class RealTimeTraceProvider extends TraceProvider {
+  final XResizer xResizer;
+  final YResizer yResizer;
+
   /// Callback property called whenever the horizontal axis is resized.
   final void Function()? onXUpdate;
 
   /// Creates a real-time trace provider.
+  ///
+  /// [xResizer] and [yResizer] represents the resizers of both axes.
   RealTimeTraceProvider(
       {Viewport? initialViewport,
-      required YResizer yResizer,
-      required XResizer xResizer,
+      required this.xResizer,
+      required this.yResizer,
       this.onXUpdate})
-      : _viewport = initialViewport ?? Viewport(Range(0, 1), Range(0, 1)),
-        super(xResizer: xResizer, yResizer: yResizer);
+      : _viewport = initialViewport ?? Viewport(Range(0, 1), Range(0, 1));
 
   @override
   Viewport get viewport => _viewport;

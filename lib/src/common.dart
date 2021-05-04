@@ -211,6 +211,12 @@ class Viewport {
   /// Creates a viewport.
   const Viewport(this.x, this.y);
 
+  /// Creates a scaling based on this horizontal axis targeting a given range.
+  Scaling xScale(Range target) => _XScaling(x, target);
+
+  /// Creates a scaling based on this vertical axis targeting a given range.
+  Scaling yScale(Range target) => _YScaling(y, target);
+
   /// Copy this range using a new configuration, if given.
   Viewport copy({Range? x, Range? y}) => Viewport(x ?? this.x, y ?? this.y);
 
@@ -232,32 +238,49 @@ class Viewport {
 }
 
 /// Defines how a value should be scaled.
-class Dimension {
+abstract class Scaling {
   /// The origin range.
   final Range from;
 
   /// The target range.
   final Range to;
 
-  /// Creates a dimension.
-  const Dimension(this.from, this.to);
+  /// Creates a scaling [from] a range [to] another.
+  const Scaling(this.from, this.to);
+
+  /// Scales a value from a origin range to a target range.
+  double scale(double value);
+}
+
+/// Defines how a value should be scaled in a horizontal axis.
+class _XScaling extends Scaling {
+  const _XScaling(Range from, Range to) : super(from, to);
 
   /// Scales a value from a origin range to a target range.
   ///
   /// The same proportion will be used for mapping the origin to the target,
   /// i.e. if [value] is equal to the maximum of the origin range, the returned
   /// value will be the maximum of the target range.
+  @override
   double scale(double value) {
     if (from.length == 0) return to.min;
-    return (((value - from.min) * to.length) / from.length) + to.min;
+    return ((value - from.min) / from.length) * to.length + to.min;
   }
+}
+
+/// Defines how a value should be scaled in a vertical axis.
+///
+/// This scaling is reversed since the orientation of the vertical axis of a
+/// [Canvas] is bottom-top instead of top-bottom.
+class _YScaling extends Scaling {
+  const _YScaling(Range from, Range to) : super(from, to);
 
   /// Scales a value from a origin range to a reversed target range.
-  ///
-  /// If a point is being plotted in the vertical axis (where the plotting
-  /// orientation is bottom-top instead of top-bottom), this scaling is
-  /// preferred.
-  double reverseScale(double value) => scale(-value);
+  @override
+  double scale(double value) {
+    if (from.length == 0) return to.min;
+    return (1 - ((value - from.min) / from.length)) * to.length + to.min;
+  }
 }
 
 /// Defines the position of a value relative to a range.
@@ -284,9 +307,6 @@ class Range {
 
   /// This range with [max] and [min] reversed.
   Range reversed() => Range(max, min);
-
-  /// Combines this range with another [range] for scaling purposes.
-  Dimension combine(Range range) => Dimension(this, range);
 
   /// Checks the position of a [value] relative to this range.
   RangeLimit contains(double value) {
@@ -315,6 +335,9 @@ class Range {
 
   @override
   int get hashCode => min.hashCode ^ max.hashCode;
+
+  @override
+  String toString() => 'Range{min: $min, max: $max}';
 }
 
 /// Represents a point.

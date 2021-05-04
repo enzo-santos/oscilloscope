@@ -27,17 +27,16 @@ class TracePainter extends CustomPainter {
     if (provider.values.isEmpty) return;
 
     final Viewport viewport = provider.viewport;
-    final Dimension xDim = viewport.x.combine(Range.fromSize(size.width));
-    final Dimension yDim = viewport.y.combine(Range.fromSize(size.height));
+    final Scaling xScaling = viewport.xScale(Range.fromSize(size.width));
+    final Scaling yScaling = viewport.yScale(Range.fromSize(size.height));
 
     // Draw the main path
-    tracePlotter.plot(canvas, provider.values, xDim, yDim);
+    tracePlotter.plot(canvas, provider.values, xScaling, yScaling);
 
     // Draw the y-origin trace, if required
     final TraceStyle? yOriginStyle = this.yOriginStyle;
     if (yOriginStyle != null) {
-      final Dimension yDim = viewport.y.combine(Range.fromSize(size.height));
-      final double yOrigin = yDim.scale(0);
+      final double yOrigin = yScaling.scale(0);
       final Offset yStart = Offset(0, yOrigin);
       final Offset yEnd = Offset(size.width, yOrigin);
       canvas.drawLine(yStart, yEnd, yOriginStyle.paint);
@@ -45,9 +44,8 @@ class TracePainter extends CustomPainter {
 
     // Draw any background traces
     backgroundTraces.forEach((trace) {
-      final Plotter plotter = trace.plotter;
       final List<Point> data = Series(trace.data).enclose(viewport.x);
-      plotter.plot(canvas, data, xDim, yDim);
+      trace.plotter.plot(canvas, data, xScaling, yScaling);
     });
   }
 

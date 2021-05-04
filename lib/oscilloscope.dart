@@ -34,7 +34,8 @@ class Oscilloscope extends StatelessWidget {
     this.traceProvider, {
     this.backgroundColor = Colors.black,
     this.margin = const EdgeInsets.all(10.0),
-    this.tracePlotter = const LinePlotter(style: TraceStyle(thickness: 2.0, color: Colors.black)),
+    this.tracePlotter = const LinePlotter(
+        style: TraceStyle(thickness: 2.0, color: Colors.black)),
     this.yOriginStyle = const TraceStyle(thickness: 0.5, color: Colors.grey),
     this.xAxisProvider = const RelativeAxisProvider(0.05),
     this.yAxisProvider = const RelativeAxisProvider(0.05),
@@ -62,7 +63,8 @@ class Oscilloscope extends StatelessWidget {
           ),
         ),
         xAxis: showXAxis
-            ? CustomPaint(painter: XAxisPainter(traceProvider, xAxisProvider))
+            ? CustomPaint(
+                painter: XAxisPainter(traceProvider, xAxisProvider))
             : null,
         yAxis: showYAxis
             ? CustomPaint(painter: YAxisPainter(traceProvider, yAxisProvider))
